@@ -1,7 +1,20 @@
+/*
+ * General/utility function prototypes
+ */
+void check_args(int);
 void usage();
-int is_elf64(FILE *);
-uint64_t entry_addr64(FILE *);
-uint64_t file_size(FILE *);
-void inject_payload(FILE *, int);
-void set_entrypt(FILE *, int);
 
+FILE *open_or_exit(const char *);
+void close_file(FILE *);
+
+/*
+ * ELF header print and parsing prototypes
+ */
+void parse_elfhdr64(Elf64_Ehdr *, FILE *);
+
+void print_elfhdr64(Elf64_Ehdr *);
+void print_elfhdr64_ident(unsigned char[]);
+void print_elfhdr64_magicnum(unsigned char[]);
+void print_elfhdr64_elfclass(unsigned char);
+void print_elfhdr64_encoding(unsigned char);
+void print_elfhdr64_version(unsigned char);

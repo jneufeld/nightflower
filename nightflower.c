@@ -2,46 +2,46 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <elf.h>
+
 #include "nightflower.h"
 
+/******************************************************************************
+ * main
+ ******************************************************************************/
+
 int main(int argc, char *argv[])
+{
+    check_args(argc);
+
+    FILE *bin_file = open_or_exit(argv[1]);
+
+    Elf64_Ehdr elf_header;
+    parse_elfhdr64(&elf_header, bin_file);
+    print_elfhdr64(&elf_header);
+
+    close_file(bin_file);
+
+    return 0;
+}
+
+/******************************************************************************
+ * General/utility functions
+ ******************************************************************************/
+
+/*
+ * Terminate and print usage if program args are invalid.
+ */
+void check_args(int argc) 
 {
     if(argc != 2) {
         usage();
         exit(-1);
     }
-
-    FILE *bin_file = fopen(argv[1], "r+");
-    if(!bin_file) {
-        printf("Error: Could not open file (%s)\n", argv[1]);
-        exit(-1);
-    }
-
-    int elf64 = is_elf64(bin_file);
-    if(elf64)
-        printf("Type: ELF64\n");
-    else
-        printf("Type: ELF32\n");
-
-    uint64_t entry_address = entry_addr64(bin_file);
-    printf("Entry: %#llx\n", entry_address);
-
-    uint64_t size = file_size(bin_file);
-    printf("Size: %llu\n", size);
-
-    printf("Injecting payload\n");
-    inject_payload(bin_file, size);
-
-    printf("Setting new entry point\n");
-    set_entrypt(bin_file, size);
-
-    close(bin_file);
-
-    return 0;
 }
 
 /*
- * Print the program's usage info.
+ * Print the program's usage.
  */
 void usage()
 {
@@ -50,130 +50,115 @@ void usage()
 }
 
 /*
- * Return 1 if binary file is a 64bit ELF.
- * Arguments:
- *      bin_file - file descriptor to binary file
+ * Return file pointer or terminate and print error.
  */
-int is_elf64(FILE *bin_file)
+FILE *open_or_exit(const char *file_name)
 {
-    int seek_res = fseek(bin_file, 4, SEEK_SET);
-    if(seek_res) {
-        printf("Error: Could not seek to EI_CLASS\n");
+    const char *open_mode = "r";
+    FILE *bin_file = fopen(file_name, open_mode);
+
+    if(!bin_file) {
+        printf("Error: Could not open file (%s)\n", file_name);
         exit(-1);
     }
 
-    int ei_class = fgetc(bin_file);
-    return ei_class == 2;
+    return bin_file;
 }
 
 /*
- * Return the binary file's entry point as a virtual address.
- * Arguments:
- *      bin_file - file descriptor to binary file
+ * Safely close an open file pointer.
  */
-uint64_t entry_addr64(FILE *bin_file)
+void close_file(FILE *open_file)
 {
-    int seek_res = fseek(bin_file, 24, SEEK_SET);
-    if(seek_res) {
-        printf("Error: Could not seek to E_ENTRY\n");
-        exit(-1);
-    }
+    close(open_file);
+}
 
-    int bytes = 8;
-    int i;
-    uint64_t entry_address = 0;
-    for(i = 0; i < bytes; i++) {
-        uint64_t b = fgetc(bin_file);
-        entry_address |= b << (i * 8);
-    }
+/******************************************************************************
+ * ELF print and parsing functions
+ ******************************************************************************/
 
-    return entry_address;
+/*
+ * TODO: Print contents of a 64bit ELF header.
+ */
+void print_elfhdr64(Elf64_Ehdr *elf64_header)
+{
+    print_elfhdr64_ident(elf64_header->e_ident);
 }
 
 /*
- * Return the byte size of the file.
- * Arguments:
- *      bin_file - file descriptor to binary file
+ * TODO: Print contents of a 64bit ELF header.
  */
-uint64_t file_size(FILE *bin_file)
+void print_elfhdr64_ident(unsigned char e_ident[])
 {
-    int seek_start = fseek(bin_file, 0, SEEK_SET);
-    if(seek_start) {
-        printf("Error: Could not seek to SEEK_START\n");
-        exit(-1);
-    }
-
-    int seek_end = fseek(bin_file, 0, SEEK_END);
-    if(seek_end) {
-        printf("Error: Could not seek to SEEK_END\n");
-        exit(-1);
-    }
-
-    uint64_t file_size = ftell(bin_file);
-    return file_size;
-} 
-
-/*
- * Inject a small payload to the end of the binary file.
- * Arguments:
- *      bin_file - file descriptor to binary file.
- *      size     - size of file in bytes.
- */
-void inject_payload(FILE *bin_file, int size)
-{
-    const int payload_len = 12;
-    const char *payload_code = "\xbb\x00\x00\x00\x00"
-        "\xb8\x01\x00\x00\x00\xcd\x80";
-
-    int seek_end = fseek(bin_file, 0, SEEK_END);
-    if(seek_end) {
-        printf("Error: Could not seek to SEEK_END\n");
-        exit(-1);
-    }
-
-    int i;
-    for(i = 0; i < payload_len; i++)
-        fputc(payload_code[i], bin_file);
-
-    /*
-    const int payload_code_len = 34;
-    const int payload_code_start = size;
-    const int payload_str_start = size + payload_code_len;
-
-    char payload_str_addr[4];
-    int i;
-    for(i = 0; i < 4; i++)
-        payload_str_addr[i] = 
-
-    const char *payload_code = "\xba\x0e\x00\x00\x00\xb9\x77\x77\x77\x77"
-        "\xbb\x01\x00\x00\x00\xb8\x04\x00\x00\x00\xcd\x80\xbb\x00\x00\x00\x00"
-        "\xb8\x01\x00\x00\x00\xcd\x80";
-
-    const char *payload_str = "VIRUS!";
-    */
+    print_elfhdr64_magicnum(e_ident);
+    print_elfhdr64_elfclass(e_ident[EI_CLASS]);
+    print_elfhdr64_encoding(e_ident[EI_DATA]);
+    print_elfhdr64_version(e_ident[EI_VERSION]);
 }
 
 /*
- * 
+ * TODO: Print a 64bit ELF's magic numbers.
  */
-void set_entrypt(FILE *bin_file, int new_entrypt)
+void print_elfhdr64_magicnum(unsigned char e_ident[])
 {
-    int seek_res = fseek(bin_file, 24, SEEK_SET);
-    if(seek_res) {
-        printf("Error: Could not seek to E_ENTRY\n");
-        exit(-1);
-    }
-
-    char little_endian_entry[4];
-    int i;
-    for(i = 0; i < 4; i++) {
-        int cur_byte = new_entrypt >> (i * 8);
-        little_endian_entry[i] = cur_byte & 0xff;
-        printf("%#0x\n", little_endian_entry[i]);
-    }
+    printf("Magic numbers: %x%c%c%c\n",
+        e_ident[EI_MAG0],
+        e_ident[EI_MAG1],
+        e_ident[EI_MAG2],
+        e_ident[EI_MAG3]);
 }
 
+/*
+ * TODO: Print a 64bit ELF's class.
+ */
+void print_elfhdr64_elfclass(unsigned char elf_class)
+{
+    char *elf_class_str = NULL;
 
+    if(elf_class == ELFCLASSNONE)
+        elf_class_str = "Invalid class";
+    else if(elf_class == ELFCLASS32)
+        elf_class_str = "32bit ELF";
+    else if(elf_class == ELFCLASS64)
+        elf_class_str = "64bit ELF";
+    else
+        elf_class_str = "Unknown ELF class";
 
+    printf("ELF class: %s\n", elf_class_str);
+}
 
+/*
+ * TODO: Print a 64bit ELF's data encoding.
+ */
+void print_elfhdr64_encoding(unsigned char data_encoding)
+{
+    char *data_encoding_str = NULL;
 
+    if(data_encoding == ELFDATANONE)
+        data_encoding_str = "Invalid data encoding";
+    else if(data_encoding == ELFDATA2LSB)
+        data_encoding_str = "Little endian";
+    else if(data_encoding == ELFDATA2MSB)
+        data_encoding_str = "Big endian";
+    else
+        data_encoding_str = "Unknown data encoding";
+
+    printf("Data encoding: %s\n", data_encoding_str);
+}
+
+/*
+ * TODO: Print a 64bit ELF's version.
+ * TODO: Assert version is EV_CURRENT.
+ */
+void print_elfhdr64_version(unsigned char version)
+{
+    printf("Version: %d\n", version);
+}
+
+/*
+ * TODO: Parse 64bit ELF header data from binary file.
+ */
+void parse_elfhdr64(Elf64_Ehdr *elf64_header, FILE *bin_file)
+{
+
+}
