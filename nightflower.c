@@ -73,11 +73,55 @@ void close_file(FILE *open_file)
 }
 
 /*
- * Return unsigned 16bit integer.
+ * Return Elf64_Half value from the given position in a binary file.
  */
-Elf64_Half make_halfword(unsigned char upper, unsigned char lower)
+Elf64_Half read_elf64half(FILE *bin_file, const unsigned int position)
+{
+    Elf64_Half value = 0;
+    unsigned char lower;
+    unsigned char upper;
+
+    fseek(bin_file, position, SEEK_SET);
+
+    lower = fgetc(bin_file);
+    upper = fgetc(bin_file);
+
+    value = make_elf64half(upper, lower);
+    return value;
+}
+
+/*
+ * Return Elf64_Half from two bytes.
+ */
+Elf64_Half make_elf64half(unsigned char upper, unsigned char lower)
 {
     return (upper << 8) | lower;
+}
+
+/*
+ * Return Elf64_Word value from the given position in a binary file.
+ */
+Elf64_Word read_elf64word(FILE *bin_file, const unsigned int position)
+{
+    Elf64_Word value = 0;
+    Elf64_Half lower;
+    Elf64_Half upper;
+
+    fseek(bin_file, position, SEEK_SET);
+
+    lower = read_elf64half(bin_file, position);
+    upper = read_elf64half(bin_file, position + 2);
+
+    value = make_elf64word(upper, lower);
+    return value;
+}
+
+/*
+ * Return Elf64_Word from two Elf64_Half.
+ */
+Elf64_Word make_elf64word(Elf64_Half upper, Elf64_Half lower)
+{
+    return (upper << 16) | lower;
 }
 
 /******************************************************************************
@@ -92,6 +136,7 @@ void print_elfhdr64(Elf64_Ehdr *elf64_header)
     print_elfhdr64_ident(elf64_header->e_ident);
     print_elfhdr64_type(elf64_header->e_type);
     print_elfhdr64_machine(elf64_header->e_machine);
+    print_elfhdr64_version(elf64_header->e_version);
 }
 
 /*
@@ -102,7 +147,7 @@ void print_elfhdr64_ident(unsigned char e_ident[])
     print_elfhdr64_magicnum(e_ident);
     print_elfhdr64_elfclass(e_ident[EI_CLASS]);
     print_elfhdr64_encoding(e_ident[EI_DATA]);
-    print_elfhdr64_version(e_ident[EI_VERSION]);
+    print_elfhdr64_identversion(e_ident[EI_VERSION]);
 }
 
 /*
@@ -159,9 +204,18 @@ void print_elfhdr64_encoding(unsigned char data_encoding)
  * Print a 64bit ELF's version.
  * TODO: Assert version is EV_CURRENT.
  */
-void print_elfhdr64_version(unsigned char version)
+void print_elfhdr64_identversion(unsigned char version)
 {
-    printf("Version: %d\n", version);
+    char *version_str = NULL;
+
+    if(version == EV_NONE)
+        version_str = "Invalid version";
+    else if(version == EV_CURRENT)
+        version_str = "Current version";
+    else
+        version_str = "Unknown file version";
+
+    printf("Version: %s (%d)\n", version_str, version);
 }
 
 /*
@@ -202,13 +256,31 @@ void print_elfhdr64_machine(Elf64_Half machine)
 }
 
 /*
+ * Print a 64bit ELF's version.
+ */
+void print_elfhdr64_version(Elf64_Word version)
+{
+    char *version_str = NULL;
+
+    if(version == EV_NONE)
+        version_str = "Invalid version";
+    else if(version == EV_CURRENT)
+        version_str = "Current version";
+    else
+        version_str = "Unknown file version";
+
+    printf("Version: %s (%d)\n", version_str, version);
+}
+
+/*
  * TODO: Parse 64bit ELF header data from binary file.
  */
 void parse_elfhdr64(Elf64_Ehdr *elf64_header, FILE *bin_file)
 {
     parse_elfhdr64_ident(elf64_header->e_ident, bin_file);
-    elf64_header->e_type = parse_elfhdr64_type(bin_file);
-    elf64_header->e_machine = parse_elfhdr64_machine(bin_file);
+    elf64_header->e_type = read_elf64half(bin_file, ELF64_TYPE_POS);
+    elf64_header->e_machine = read_elf64half(bin_file, ELF64_MACHINE_POS);
+    elf64_header->e_version = read_elf64word(bin_file, ELF64_VERSION_POS);
 }
 
 /*
@@ -226,49 +298,5 @@ void parse_elfhdr64_ident(unsigned char e_ident[], FILE *bin_file)
     e_ident[EI_CLASS] = fgetc(bin_file);
     e_ident[EI_DATA] = fgetc(bin_file);
     e_ident[EI_VERSION] = fgetc(bin_file);
-}
-
-/*
- * Parse 64bit ELF header's type from binary file.
- * TODO: Consider refactoring into single function that takes location to read
- *       from.
- * TODO: Replace type_location with #define TYPE_LOCATION ?.
- */
-Elf64_Half parse_elfhdr64_type(FILE *bin_file)
-{
-    Elf64_Half type = 0;
-    unsigned char lower;
-    unsigned char upper;
-    const int type_location = EI_NIDENT;
-
-    fseek(bin_file, type_location, SEEK_SET);
-
-    lower = fgetc(bin_file);
-    upper = fgetc(bin_file);
-
-    type = make_halfword(upper, lower);
-    return type;
-}
-
-/*
- * Parse 64bit ELF header's machine architecture from binary file.
- * TODO: Consider refactoring into single function that takes location to read
- *       from.
- * TODO: Replace machine_location with #define MACHINE_LOCATION ?.
- */
-Elf64_Half parse_elfhdr64_machine(FILE *bin_file)
-{
-    Elf64_Half machine = 0;
-    unsigned char lower;
-    unsigned char upper;
-    const int machine_location = EI_NIDENT + 2;
-
-    fseek(bin_file, machine_location, SEEK_SET);
-
-    lower = fgetc(bin_file);
-    upper = fgetc(bin_file);
-
-    machine = make_halfword(upper, lower);
-    return machine;
 }
 
