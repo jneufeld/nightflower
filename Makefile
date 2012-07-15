@@ -1,5 +1,5 @@
 all:
-	gcc nightflower.c -o nightflower
+	gcc -Wall nightflower.c -o nightflower
 
 clean:
 	rm -f nightflower
