@@ -150,29 +150,48 @@ Elf64_Addr make_elf64addr(Elf64_Addr upper, Elf64_Addr lower)
     return (upper << 32) | lower;
 }
 
+/*
+ * Print a given string followed by a 64bit hex value.
+ */
+void print_str_hex64(const char *string, Elf64_Addr value)
+{
+    const long long unsigned int value_u64 = value;
+    printf("%s: 0x%llX\n", string, value_u64);
+}
+
+/*
+ * Print a given string followed by an int.
+ */
+void print_str_int(const char *string, const unsigned int value)
+{
+    printf("%s: %d\n", string, value);
+}
+
 /******************************************************************************
  * ELF print and parsing functions
  ******************************************************************************/
 
 /*
- * TODO: Print contents of a 64bit ELF header.
+ * Print contents of a 64bit ELF header.
  */
 void print_elfhdr64(Elf64_Ehdr *elf64_header)
 {
     print_elfhdr64_ident(elf64_header->e_ident);
     print_elfhdr64_type(elf64_header->e_type);
-    print_elfhdr64_machine(elf64_header->e_machine);
     print_elfhdr64_version(elf64_header->e_version);
-    print_elfhdr64_entry(elf64_header->e_entry);
-    print_elfhdr64_phoff(elf64_header->e_phoff);
-    print_elfhdr64_shoff(elf64_header->e_shoff);
-    print_elfhdr64_flags(elf64_header->e_flags);
-    print_elfhdr64_ehsize(elf64_header->e_ehsize);
-    print_elfhdr64_phentsize(elf64_header->e_phentsize);
-    print_elfhdr64_phnum(elf64_header->e_phnum);
-    print_elfhdr64_shentsize(elf64_header->e_shentsize);
-    print_elfhdr64_shnum(elf64_header->e_shnum);
-    print_elfhdr64_shstrndx(elf64_header->e_shstrndx);
+
+    print_str_hex64("Entry address", elf64_header->e_entry);
+    print_str_hex64("Program header offset", elf64_header->e_phoff);
+    print_str_hex64("Section header offset", elf64_header->e_shoff);
+
+    print_str_int("Machine type", elf64_header->e_machine);
+    print_str_int("Processor flags", elf64_header->e_flags);
+    print_str_int("ELF header size", elf64_header->e_ehsize);
+    print_str_int("Program header entry size", elf64_header->e_phentsize);
+    print_str_int("Program header entry count", elf64_header->e_phnum);
+    print_str_int("Section header entry size", elf64_header->e_shentsize);
+    print_str_int("Section header entry count", elf64_header->e_shnum);
+    print_str_int("Section name string table index", elf64_header->e_shstrndx);
 }
 
 /*
@@ -238,7 +257,6 @@ void print_elfhdr64_encoding(unsigned char data_encoding)
 
 /*
  * Print a 64bit ELF's version.
- * TODO: Assert version is EV_CURRENT.
  */
 void print_elfhdr64_identversion(unsigned char version)
 {
@@ -282,16 +300,6 @@ void print_elfhdr64_type(Elf64_Half type)
 }
 
 /*
- * Print a 64bit ELF's machine.
- * TODO: (Possibly) investigate why elf.h doesn't contain architecture
- *       definitions.
- */
-void print_elfhdr64_machine(Elf64_Half machine)
-{
-    printf("Machine: %d\n", machine);
-}
-
-/*
  * Print a 64bit ELF's version.
  */
 void print_elfhdr64_version(Elf64_Word version)
@@ -309,107 +317,25 @@ void print_elfhdr64_version(Elf64_Word version)
 }
 
 /*
- * Print a 64bit ELF's entry point.
- */
-void print_elfhdr64_entry(Elf64_Addr address)
-{
-    const long long unsigned int address_u64 = address;
-    printf("Entry address: 0x%llX\n", address_u64);
-}
-
-/*
- * Print a 64bit ELF's program header offset.
- */
-void print_elfhdr64_phoff(Elf64_Off offset)
-{
-    const long long unsigned int offset_u64 = offset;
-    printf("Program header offset: 0x%llX\n", offset_u64);
-}
-
-/*
- * Print a 64bit ELF's section header offset.
- */
-void print_elfhdr64_shoff(Elf64_Off offset)
-{
-    const long long unsigned int offset_u64 = offset;
-    printf("Section header offset: 0x%llX\n", offset_u64);
-}
-
-/*
- * Print a 64bit ELF's processor specific flags.
- */
-void print_elfhdr64_flags(Elf64_Word flags)
-{
-    printf("Processor flags: 0x%X\n", flags);
-}
-
-/*
- * Print a 64bit ELF's header size.
- */
-void print_elfhdr64_ehsize(Elf64_Half header_size)
-{
-    printf("ELF header size: %d\n", header_size);
-}
-
-/*
- * Print a 64bit ELF's program header entry size.
- */
-void print_elfhdr64_phentsize(Elf64_Half phent_size)
-{
-    printf("Program header entry size: %d\n", phent_size);
-}
-
-/*
- * Print a 64bit ELF's number of program header entries.
- */
-void print_elfhdr64_phnum(Elf64_Half entries)
-{
-    printf("Program header entry count: %d\n", entries);
-}
-
-/*
- * Print a 64bit ELF's section header entry size.
- */
-void print_elfhdr64_shentsize(Elf64_Half shent_size)
-{
-    printf("Section header entry size: %d\n", shent_size);
-}
-
-/*
- * Print a 64bit ELF's number of section header entries.
- */
-void print_elfhdr64_shnum(Elf64_Half entries)
-{
-    printf("Section header entry count: %d\n", entries);
-}
-
-/*
- * Print a 64bit ELF's section name string table index.
- */
-void print_elfhdr64_shstrndx(Elf64_Half index)
-{
-    printf("Section name string table index: %d\n", index);
-}
-
-/*
- * TODO: Parse 64bit ELF header data from binary file.
+ * Parse 64bit ELF header data from binary file.
  */
 void parse_elfhdr64(Elf64_Ehdr *elf64_header, FILE *bin_file)
 {
     parse_elfhdr64_ident(elf64_header->e_ident, bin_file);
-    elf64_header->e_type = read_elf64half(bin_file, ELF64_TYPE_POS);
-    elf64_header->e_machine = read_elf64half(bin_file, ELF64_MACHINE_POS);
-    elf64_header->e_version = read_elf64word(bin_file, ELF64_VERSION_POS);
-    elf64_header->e_entry = read_elf64addr(bin_file, ELF64_ENTRY_POS);
-    elf64_header->e_phoff = read_elf64addr(bin_file, ELF64_PHOFF_POS);
-    elf64_header->e_shoff = read_elf64addr(bin_file, ELF64_SHOFF_POS);
-    elf64_header->e_flags = read_elf64word(bin_file, ELF64_FLAGS_POS);
-    elf64_header->e_ehsize = read_elf64word(bin_file, ELF64_EHSIZE_POS);
+
+    elf64_header->e_type      = read_elf64half(bin_file, ELF64_TYPE_POS);
+    elf64_header->e_machine   = read_elf64half(bin_file, ELF64_MACHINE_POS);
+    elf64_header->e_version   = read_elf64word(bin_file, ELF64_VERSION_POS);
+    elf64_header->e_entry     = read_elf64addr(bin_file, ELF64_ENTRY_POS);
+    elf64_header->e_phoff     = read_elf64addr(bin_file, ELF64_PHOFF_POS);
+    elf64_header->e_shoff     = read_elf64addr(bin_file, ELF64_SHOFF_POS);
+    elf64_header->e_flags     = read_elf64word(bin_file, ELF64_FLAGS_POS);
+    elf64_header->e_ehsize    = read_elf64word(bin_file, ELF64_EHSIZE_POS);
     elf64_header->e_phentsize = read_elf64word(bin_file, ELF64_PHENTSIZE_POS);
-    elf64_header->e_phnum = read_elf64word(bin_file, ELF64_PHNUM_POS);
+    elf64_header->e_phnum     = read_elf64word(bin_file, ELF64_PHNUM_POS);
     elf64_header->e_shentsize = read_elf64word(bin_file, ELF64_SHENTSIZE_POS);
-    elf64_header->e_shnum = read_elf64word(bin_file, ELF64_SHNUM_POS);
-    elf64_header->e_shstrndx = read_elf64word(bin_file, ELF64_SHSTRNDX_POS);
+    elf64_header->e_shnum     = read_elf64word(bin_file, ELF64_SHNUM_POS);
+    elf64_header->e_shstrndx  = read_elf64word(bin_file, ELF64_SHSTRNDX_POS);
 }
 
 /*
@@ -424,7 +350,7 @@ void parse_elfhdr64_ident(unsigned char e_ident[], FILE *bin_file)
     e_ident[EI_MAG2] = fgetc(bin_file);
     e_ident[EI_MAG3] = fgetc(bin_file);
 
-    e_ident[EI_CLASS] = fgetc(bin_file);
-    e_ident[EI_DATA] = fgetc(bin_file);
+    e_ident[EI_CLASS]   = fgetc(bin_file);
+    e_ident[EI_DATA]    = fgetc(bin_file);
     e_ident[EI_VERSION] = fgetc(bin_file);
 }

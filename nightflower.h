@@ -31,6 +31,9 @@ Elf64_Half make_elf64half(unsigned char, unsigned char);
 Elf64_Word make_elf64word(Elf64_Half, Elf64_Half);
 Elf64_Addr make_elf64addr(Elf64_Addr, Elf64_Addr);
 
+void print_str_hex64(const char *, Elf64_Addr);
+void print_str_int(const char *, const unsigned int);
+
 /*
  * ELF header print and parsing prototypes
  */
@@ -44,15 +47,4 @@ void print_elfhdr64_elfclass(unsigned char);
 void print_elfhdr64_encoding(unsigned char);
 void print_elfhdr64_identversion(unsigned char);
 void print_elfhdr64_type(Elf64_Half);
-void print_elfhdr64_machine(Elf64_Half);
 void print_elfhdr64_version(Elf64_Word);
-void print_elfhdr64_entry(Elf64_Addr);
-void print_elfhdr64_phoff(Elf64_Off);
-void print_elfhdr64_shoff(Elf64_Off);
-void print_elfhdr64_flags(Elf64_Word);
-void print_elfhdr64_ehsize(Elf64_Half);
-void print_elfhdr64_phentsize(Elf64_Half);
-void print_elfhdr64_phnum(Elf64_Half);
-void print_elfhdr64_shentsize(Elf64_Half);
-void print_elfhdr64_shnum(Elf64_Half);
-void print_elfhdr64_shstrndx(Elf64_Half);
