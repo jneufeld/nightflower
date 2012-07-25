@@ -3,6 +3,7 @@
 
 #include "elf_parse.h"
 #include "nightflower.h"
+#include "obfuscate.h"
 
 /******************************************************************************
  * main
@@ -17,6 +18,7 @@ int main(int argc, char *argv[])
     Elf64_Ehdr elf_header;
     parse_elfhdr64(&elf_header, bin_file);
     print_elfhdr64(&elf_header);
+    elf_obfuscate(&elf_header, bin_file);
 
     close_file(bin_file);
 
@@ -52,7 +54,7 @@ void usage()
  */
 FILE *open_or_exit(const char *file_name)
 {
-    const char *open_mode = "r";
+    const char *open_mode = "r+";
     FILE *bin_file = fopen(file_name, open_mode);
 
     if(!bin_file) {
