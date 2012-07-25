@@ -7,11 +7,11 @@
 /*
  * Return Elf64_Half value from the given position in a binary file.
  */
-Elf64_Half read_elf64half(FILE *bin_file, const unsigned int position)
+Elf64_Half read_elf64half(FILE *bin_file, const uint32_t position)
 {
     Elf64_Half value = 0;
-    unsigned char lower;
-    unsigned char upper;
+    uint8_t lower = 0;
+    uint8_t upper = 0;
 
     fseek(bin_file, position, SEEK_SET);
 
@@ -25,7 +25,7 @@ Elf64_Half read_elf64half(FILE *bin_file, const unsigned int position)
 /*
  * Return Elf64_Half from two bytes.
  */
-Elf64_Half make_elf64half(unsigned char upper, unsigned char lower)
+Elf64_Half make_elf64half(uint8_t upper, uint8_t lower)
 {
     return (upper << 8) | lower;
 }
@@ -33,11 +33,11 @@ Elf64_Half make_elf64half(unsigned char upper, unsigned char lower)
 /*
  * Return Elf64_Word value from the given position in a binary file.
  */
-Elf64_Word read_elf64word(FILE *bin_file, const unsigned int position)
+Elf64_Word read_elf64word(FILE *bin_file, const uint32_t position)
 {
     Elf64_Word value = 0;
-    Elf64_Half lower;
-    Elf64_Half upper;
+    Elf64_Half lower = 0;
+    Elf64_Half upper = 0;
 
     fseek(bin_file, position, SEEK_SET);
 
@@ -59,11 +59,11 @@ Elf64_Word make_elf64word(Elf64_Half upper, Elf64_Half lower)
 /*
  * Return Elf64_Addr value from the given position in a binary file.
  */
-Elf64_Addr read_elf64addr(FILE *bin_file, const unsigned int position)
+Elf64_Addr read_elf64addr(FILE *bin_file, const uint32_t position)
 {
     Elf64_Addr value = 0;
-    Elf64_Addr lower;
-    Elf64_Addr upper;
+    Elf64_Addr lower = 0;
+    Elf64_Addr upper = 0;
 
     fseek(bin_file, position, SEEK_SET);
 
@@ -94,7 +94,7 @@ void print_str_hex64(const char *string, Elf64_Addr value)
 /*
  * Print a given string followed by an int.
  */
-void print_str_int(const char *string, const unsigned int value)
+void print_str_int(const char *string, const uint32_t value)
 {
     printf("%s: %d\n", string, value);
 }

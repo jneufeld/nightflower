@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <elf.h>
 
@@ -21,15 +22,15 @@
 /*
  * Utility function prototypes
  */
-Elf64_Half read_elf64half(FILE *, const unsigned int);
-Elf64_Word read_elf64word(FILE *, const unsigned int);
-Elf64_Addr read_elf64addr(FILE *, const unsigned int);
-Elf64_Half make_elf64half(unsigned char, unsigned char);
+Elf64_Half read_elf64half(FILE *, const uint32_t);
+Elf64_Word read_elf64word(FILE *, const uint32_t);
+Elf64_Addr read_elf64addr(FILE *, const uint32_t);
+Elf64_Half make_elf64half(uint8_t, uint8_t);
 Elf64_Word make_elf64word(Elf64_Half, Elf64_Half);
 Elf64_Addr make_elf64addr(Elf64_Addr, Elf64_Addr);
 
 void print_str_hex64(const char *, Elf64_Addr);
-void print_str_int(const char *, const unsigned int);
+void print_str_int(const char *, const uint32_t);
 
 /*
  * ELF header print and parsing prototypes
